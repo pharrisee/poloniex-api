@@ -82,6 +82,7 @@ func main() {
 	p := poloniex.NewWithCredentials("Key goes here", "secret goes here")
 	p.Subscribe("ticker")
 	p.Subscribe("USDT_BTC")
+	p.StartWS()
 
 	p.On("ticker", func(m poloniex.WSTicker) {
 		pp.Println(m)
