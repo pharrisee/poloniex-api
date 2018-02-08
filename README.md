@@ -130,3 +130,12 @@ This gives flexibility when writing the event handlers, meaning that you could f
 
 see https://poloniex.com/support/api/ for a fuller description of the event types.
 
+## Support Development
+
+| Coin | Address                             |
+| :--- | ----------------------------------- |
+| BTC  | 1M2quzgptKWAVSmDyD7vAQbxYb8BNJmjEf  |
+| BCH  | 1CcDLKYTy2pCLTYTYBbBPkK79JeJ4v3GmV  |
+| ZEC  | t1bC8TnYYh6k71QMTTpJZdmKKzqPiqhuBxU |
+| DCR  | DsdK14zAJ7sKU2MYYozFtmuk9sAoxD7XCs9 |
+
