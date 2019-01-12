@@ -54,26 +54,40 @@ func (p *Poloniex) StartWS() {
 			chid := int64(message[0].(float64))
 			chids := toString(chid)
 			if chid > 100.0 && chid < 1000.0 {
-				// it's an orderbook
-				orderbook, err := p.parseOrderbook(message)
-				if err != nil {
-					log.Println(err)
+				if err := p.handleOrderBook(message); err != nil {
 					continue
-				}
-				for _, v := range orderbook {
-					p.Emit(v.Event, v).Emit(v.Pair, v).Emit(v.Pair+"-"+v.Event, v)
 				}
 			} else if chids == p.ByName["ticker"] {
-				// it's a ticker
-				ticker, err := p.parseTicker(message)
-				if err != nil {
-					log.Printf("%s: (%s)\n", err, message)
+				if err := p.handleTicker(message); err != nil {
 					continue
 				}
-				p.Emit("ticker", ticker)
 			}
 		}
 	}()
+}
+
+func (p *Poloniex) handleOrderBook(message []interface{}) error {
+	// it's an orderbook
+	orderbook, err := p.parseOrderbook(message)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	for _, v := range orderbook {
+		p.Emit(v.Event, v).Emit(v.Pair, v).Emit(v.Pair+"-"+v.Event, v)
+	}
+	return nil
+}
+
+func (p *Poloniex) handleTicker(message []interface{}) error {
+	// it's a ticker
+	ticker, err := p.parseTicker(message)
+	if err != nil {
+		log.Printf("%s: (%s)\n", err, message)
+		return err
+	}
+	p.Emit("ticker", ticker)
+	return nil
 }
 
 func (p *Poloniex) Subscribe(chid string) error {
