@@ -165,13 +165,17 @@ func (p *Poloniex) TradeHistory(pair string, dates ...int64) (tradeHistory Trade
 	return
 }
 
+var (
+	returnChartData = "returnChartData"
+)
+
 func (p *Poloniex) ChartData(pair string) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
 	params.Add("start", fmt.Sprintf("%d", time.Now().Add(-24*time.Hour).Unix()))
 	params.Add("end", "9999999999")
 	params.Add("period", "300")
-	err = p.public("returnChartData", params, &chartData)
+	err = p.public(returnChartData, params, &chartData)
 	return
 }
 
@@ -186,7 +190,7 @@ func (p *Poloniex) ChartDataPeriod(pair string, start, end time.Time, period ...
 	}
 	ps := fmt.Sprintf("%d", pi)
 	params.Add("period", ps)
-	err = p.public("returnChartData", params, &chartData)
+	err = p.public(returnChartData, params, &chartData)
 	return
 }
 
@@ -196,7 +200,7 @@ func (p *Poloniex) ChartDataCurrent(pair string) (chartData ChartData, err error
 	params.Add("start", fmt.Sprintf("%d", time.Now().Add(-5*time.Minute).Unix()))
 	params.Add("end", "9999999999")
 	params.Add("period", "300")
-	err = p.public("returnChartData", params, &chartData)
+	err = p.public(returnChartData, params, &chartData)
 	return
 }
 

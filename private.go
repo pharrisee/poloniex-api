@@ -379,11 +379,7 @@ func (p *Poloniex) Move(orderNumber int64, rate float64) (moveOrder MoveOrder, e
 }
 
 func (p *Poloniex) MovePostOnly(orderNumber int64, rate float64) (moveOrder MoveOrder, err error) {
-	params := url.Values{}
-	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
-	params.Add("rate", fmt.Sprintf("%.8f", rate))
-	err = p.private("moveOrder", params, &moveOrder)
-	return
+	return p.Move(orderNumber, rate)
 }
 
 func (p *Poloniex) Withdraw(currency string, amount float64, address string) (w Withdraw, err error) {
@@ -552,7 +548,6 @@ func (p *Poloniex) private(method string, params url.Values, retval interface{})
 		fmt.Println(s)
 	}
 
-	// TODO: fix this shit, it's really crappy.
 	if strings.HasPrefix(s, "[") {
 		// poloniex only ever returns an array type when there is no real data
 		// e.g. no data in a time range
