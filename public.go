@@ -11,7 +11,9 @@ import (
 )
 
 type (
-	Ticker      map[string]TickerEntry
+	//Ticker is summary information for all currency pairs
+	Ticker map[string]TickerEntry
+	//TickerEntry is summary information for a currency pair
 	TickerEntry struct {
 		Last        float64 `json:",string"`
 		Ask         float64 `json:"lowestAsk,string"`
@@ -23,31 +25,43 @@ type (
 		ID          int64   `json:"id"`
 	}
 
-	DailyVolume          map[string]DailyVolumeEntry
-	DailyVolumeEntry     map[string]float64
-	DailyVolumeTemp      map[string]interface{}
+	//DailyVolume is the 24-hour volume for all markets as well as totals for primary currencies
+	DailyVolume map[string]DailyVolumeEntry
+	//DailyVolumeEntry is the 24-hour volume for a market
+	DailyVolumeEntry map[string]float64
+	//DailyVolumeTemp ::::
+	DailyVolumeTemp map[string]interface{}
+	//DailyVolumeEntryTemp ::::
 	DailyVolumeEntryTemp map[string]interface{}
 
+	//OrderBook for a given market
 	OrderBook struct {
 		Asks     []Order
 		Bids     []Order
 		IsFrozen bool
 	}
+	//Order for a given trade
 	Order struct {
 		Rate   float64
 		Amount float64
 	}
 
+	//OrderBookTemp ::::
 	OrderBookTemp struct {
 		Asks     []OrderTemp
 		Bids     []OrderTemp
 		IsFrozen interface{}
 	}
-	OrderTemp        []interface{}
-	OrderBookAll     map[string]OrderBook
+	//OrderTemp ::::
+	OrderTemp []interface{}
+	//OrderBookAll holds the OrderBooks for all markets
+	OrderBookAll map[string]OrderBook
+	//OrderBookAllTemp ::::
 	OrderBookAllTemp map[string]OrderBookTemp
 
-	TradeHistory      []TradeHistoryEntry
+	//TradeHistory holds the historical trades for a given market
+	TradeHistory []TradeHistoryEntry
+	//TradeHistoryEntry holds an individual historical order
 	TradeHistoryEntry struct {
 		ID     int64 `json:"globalTradeID"`
 		Date   string
@@ -57,7 +71,9 @@ type (
 		Total  float64 `json:",string"`
 	}
 
-	ChartData      []ChartDataEntry
+	//ChartData holds OHLC data for a period of time at specific resolution
+	ChartData []ChartDataEntry
+	//ChartDataEntry holds OHLC data for a specific period of time at a specific resolution
 	ChartDataEntry struct {
 		Date            int64
 		High            float64
@@ -69,8 +85,10 @@ type (
 		WeightedAverage float64
 	}
 
+	//Currencies holds information about the available currencies
 	Currencies map[string]Currency
-	Currency   struct {
+	//Currency holds information about a specific currency
+	Currency struct {
 		Name           string
 		TxFee          float64 `json:",string"`
 		MinConf        float64
@@ -80,10 +98,12 @@ type (
 		Frozen         int64
 	}
 
+	//LoanOrders holds the list of loan offers and demands for a given currency
 	LoanOrders struct {
 		Offers  []LoanOrder
 		Demands []LoanOrder
 	}
+	//LoanOrder holds the a loan offer/demand for a given currency
 	LoanOrder struct {
 		Rate     float64 `json:",string"`
 		Amount   float64 `json:",string"`
@@ -92,11 +112,13 @@ type (
 	}
 )
 
+//Ticker retrieves summary information for each currency pair listed on the exchange.
 func (p *Poloniex) Ticker() (ticker Ticker, err error) {
 	err = p.public("returnTicker", nil, &ticker)
 	return
 }
 
+//DailyVolume returns the 24-hour volume for all markets as well as totals for primary currencies
 func (p *Poloniex) DailyVolume() (dailyVolume DailyVolume, err error) {
 	dvt := DailyVolumeTemp{}
 	err = p.public("return24hVolume", nil, &dvt)
@@ -121,6 +143,8 @@ func (p *Poloniex) DailyVolume() (dailyVolume DailyVolume, err error) {
 	return
 }
 
+// OrderBook returns the order book for a given market, as well as a sequence number used by websockets
+// for synchronization of book updates and an indicator specifying whether the market is frozen.
 func (p *Poloniex) OrderBook(pair string) (orderBook OrderBook, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -134,6 +158,8 @@ func (p *Poloniex) OrderBook(pair string) (orderBook OrderBook, err error) {
 	return
 }
 
+// OrderBookAll returns the order book for all markets, as well as a sequence number used by websockets
+// for synchronization of book updates and an indicator specifying whether the market is frozen.
 func (p *Poloniex) OrderBookAll() (orderBook OrderBookAll, err error) {
 	params := url.Values{}
 	params.Add("depth", "5")
@@ -150,6 +176,11 @@ func (p *Poloniex) OrderBookAll() (orderBook OrderBookAll, err error) {
 	return
 }
 
+// TradeHistory returns the past 200 trades for a given market,
+// or up to 50,000 trades between a range specified in UNIX timestamps by the "start" and "end" GET parameters.
+//
+// If a single date is passed then that is used as the startdate, and current date is used for the enddate.
+// A startdate and enddate may be passed to select a specific period.
 func (p *Poloniex) TradeHistory(pair string, dates ...int64) (tradeHistory TradeHistory, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -169,6 +200,7 @@ var (
 	returnChartData = "returnChartData"
 )
 
+//ChartData returns OHLC chart data for the last 24 hour period at 5 minute resolution.
 func (p *Poloniex) ChartData(pair string) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -179,6 +211,7 @@ func (p *Poloniex) ChartData(pair string) (chartData ChartData, err error) {
 	return
 }
 
+//ChartDataPeriod returns OHLC chart data for the specified period at a specified ersolution (default 5 minute resolution).
 func (p *Poloniex) ChartDataPeriod(pair string, start, end time.Time, period ...int) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -194,6 +227,7 @@ func (p *Poloniex) ChartDataPeriod(pair string, start, end time.Time, period ...
 	return
 }
 
+//ChartDataCurrent returns OHLC chart data for the last period at 5 minute resolution.
 func (p *Poloniex) ChartDataCurrent(pair string) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -204,11 +238,13 @@ func (p *Poloniex) ChartDataCurrent(pair string) (chartData ChartData, err error
 	return
 }
 
+//Currencies returns information about currencies.
 func (p *Poloniex) Currencies() (currencies Currencies, err error) {
 	err = p.public("returnCurrencies", nil, &currencies)
 	return
 }
 
+//LoanOrders returns the list of loan offers and demands for a given currency,
 func (p *Poloniex) LoanOrders(currency string) (loanOrders LoanOrders, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -239,6 +275,7 @@ func tempToOrderBook(obt OrderBookTemp) (ob OrderBook) {
 	return
 }
 
+//public calls a public endpoint
 func (p *Poloniex) public(command string, params url.Values, retval interface{}) (err error) {
 	if p.debug {
 		defer un(trace("public: " + command))

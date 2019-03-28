@@ -1,12 +1,10 @@
 package poloniex
 
 import (
-	"time"
-
 	"github.com/k0kubun/pp"
 )
 
-func ExampleWS() {
+func ExamplePoloniex() {
 	p := NewWithCredentials("Key goes here", "secret goes here")
 	p.Subscribe("ticker")
 	p.Subscribe("USDT_BTC")
@@ -17,7 +15,5 @@ func ExampleWS() {
 		pp.Println(m)
 	})
 
-	for _ = range time.Tick(1 * time.Second) {
-
-	}
+	select {}
 }

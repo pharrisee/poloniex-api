@@ -28,6 +28,7 @@ type (
 		PairID        int64
 	}
 
+	//WSOrderbook ::::
 	WSOrderbook struct {
 		Pair    string
 		Event   string
@@ -39,9 +40,11 @@ type (
 		TS      time.Time
 	}
 
+	//WSReportFunc is used whilst idling
 	WSReportFunc = func(time.Time)
 )
 
+//StartWS opens the websocket connection, and waits for message events
 func (p *Poloniex) StartWS() {
 	go func() {
 		for {
@@ -51,9 +54,10 @@ func (p *Poloniex) StartWS() {
 				log.Println("read:", err)
 				continue
 			}
-			chid := int64(message[0].(float64))
+			chid := int64(message[0].(float64)) //first element is the channel id
 			chids := toString(chid)
-			if chid > 100.0 && chid < 1000.0 {
+			//we only handle informational and pair based channels, assuming the informational channels are orderbooks
+			if chid > 100.0 && chid < 1000.0 { //
 				if err := p.handleOrderBook(message); err != nil {
 					continue
 				}
@@ -66,6 +70,7 @@ func (p *Poloniex) StartWS() {
 	}()
 }
 
+//takes a message and emits relevant events
 func (p *Poloniex) handleOrderBook(message []interface{}) error {
 	// it's an orderbook
 	orderbook, err := p.parseOrderbook(message)
@@ -79,6 +84,7 @@ func (p *Poloniex) handleOrderBook(message []interface{}) error {
 	return nil
 }
 
+//takes a message and emits relevant events
 func (p *Poloniex) handleTicker(message []interface{}) error {
 	// it's a ticker
 	ticker, err := p.parseTicker(message)
@@ -90,8 +96,13 @@ func (p *Poloniex) handleTicker(message []interface{}) error {
 	return nil
 }
 
+//Subscribe to a particular channel specified by channel id:
+//1000	Private	Account Notifications (Beta)
+//1002	Public	Ticker Data
+//1003	Public	24 Hour Exchange Volume
+//1010	Public	Heartbeat
+//<currency pair>	Public	Price Aggregated Book
 func (p *Poloniex) Subscribe(chid string) error {
-
 	if c, ok := p.ByName[chid]; ok {
 		chid = c
 	} else if c, ok := p.ByID[chid]; ok {
@@ -105,6 +116,12 @@ func (p *Poloniex) Subscribe(chid string) error {
 	return p.sendWSMessage(message)
 }
 
+//Unsubscribe from the specified channel:
+//1000	Private	Account Notifications (Beta)
+//1002	Public	Ticker Data
+//1003	Public	24 Hour Exchange Volume
+//1010	Public	Heartbeat
+//<currency pair>	Public	Price Aggregated Book
 func (p *Poloniex) Unsubscribe(chid string) error {
 	if c, ok := p.ByName[chid]; ok {
 		chid = c
@@ -118,6 +135,7 @@ func (p *Poloniex) Unsubscribe(chid string) error {
 	return p.sendWSMessage(message)
 }
 
+//parse the ticker supplied
 func (p *Poloniex) parseTicker(raw []interface{}) (WSTicker, error) {
 	wt := WSTicker{}
 	var rawInner []interface{}
@@ -146,6 +164,7 @@ func (p *Poloniex) parseTicker(raw []interface{}) (WSTicker, error) {
 	return wt, nil
 }
 
+//parse the supplied orderbook
 func (p *Poloniex) parseOrderbook(raw []interface{}) ([]WSOrderbook, error) {
 	trades := []WSOrderbook{}
 	marketID := int64(toFloat(raw[0]))
@@ -190,6 +209,7 @@ func (p *Poloniex) parseOrderbook(raw []interface{}) ([]WSOrderbook, error) {
 	return trades, nil
 }
 
+//WSIdle idles whilst waiting for callbacks
 func (p *Poloniex) WSIdle(dur time.Duration, callbacks ...WSReportFunc) {
 	for t := range time.Tick(dur) {
 		for _, cb := range callbacks {

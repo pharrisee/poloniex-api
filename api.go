@@ -33,7 +33,8 @@ type (
 		ByName        map[string]string
 	}
 
-	PoloniexError struct {
+	//Error is a domain specific error
+	Error struct {
 		Error string `json:"error"`
 	}
 )
