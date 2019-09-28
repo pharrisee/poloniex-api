@@ -384,7 +384,7 @@ func (p *Poloniex) BuyImmediateOrCancel(pair string, rate, amount float64) (buy 
 	params.Add("currencyPair", pair)
 	params.Add("rate", fmt.Sprintf("%.8f", rate))
 	params.Add("amount", fmt.Sprintf("%.8f", amount))
-	params.Add("fillOrKill", "1")
+	params.Add("immediateOrCancel", "1")
 	err = p.private("buy", params, &buy)
 	return
 }
@@ -419,7 +419,7 @@ func (p *Poloniex) SellImmediateOrCancel(pair string, rate, amount float64) (sel
 	params.Add("currencyPair", pair)
 	params.Add("rate", fmt.Sprintf("%.8f", rate))
 	params.Add("amount", fmt.Sprintf("%.8f", amount))
-	params.Add("fillOrKill", "1")
+	params.Add("immediateOrCancel", "1")
 	err = p.private("sell", params, &sell)
 	return
 }
