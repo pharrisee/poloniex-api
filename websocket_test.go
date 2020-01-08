@@ -4,7 +4,7 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-func ExamplePoloniex() {
+func ExampleWebsocket() {
 	p := NewWithCredentials("Key goes here", "secret goes here")
 	p.Subscribe("ticker")
 	p.Subscribe("USDT_BTC")
