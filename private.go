@@ -52,6 +52,7 @@ type (
 	DepositsWithdrawals struct {
 		Deposits    []deposit
 		Withdrawals []withdrawal
+		Adjustments []adjustment
 	}
 	deposit struct {
 		Currency      string
@@ -71,15 +72,29 @@ type (
 		Status           string
 	}
 
+	adjustment struct {
+		Currency  string
+		Amount    float64 `json:",string"`
+		Timestamp int64
+		Status    string
+		Category  string
+		Title     string `json:"adjustmentTitle"`
+		Desc      string `json:"adjustmentDesc"`
+		Help      string `json:"adjustmentHelp"`
+	}
+
 	// OpenOrders is the list of open orders for the pair specified
 	OpenOrders []OpenOrder
 	// OpenOrder is a singular entry used in the OpenOrders type
 	OpenOrder struct {
-		OrderNumber int64 `json:",string"`
-		Type        string
-		Rate        float64 `json:",string"`
-		Amount      float64 `json:",string"`
-		Total       float64 `json:",string"`
+		OrderNumber    int64 `json:",string"`
+		Type           string
+		Rate           float64 `json:",string"`
+		StartingAmount float64 `json:",string"`
+		Amount         float64 `json:",string"`
+		Total          float64 `json:",string"`
+		Date           string
+		Margin         bool
 	}
 	// OpenOrdersAll is used for all pairs
 	OpenOrdersAll map[string]OpenOrders
@@ -94,7 +109,10 @@ type (
 		Total         float64 `json:",string"`
 		OrderNumber   int64   `json:",string"`
 		Type          string
-		GlobalTradeID int64 `json:"globalTradeID"`
+		GlobalTradeID int64   `json:"globalTradeID"`
+		TradeID       int64   `json:"tradeID"`
+		Fee           float64 `json:",string"`
+		Category      string
 	}
 	// PrivateTradeHistoryAll holds the trade histories of all markets
 	PrivateTradeHistoryAll map[string]PrivateTradeHistory
@@ -114,33 +132,59 @@ type (
 		Date          string  `json:"date"`
 	}
 
-	//Buy orders
+	// OrderStatus holds the status of a given order
+	OrderStatus struct {
+		Status         string
+		Rate           float64 `json:",string"`
+		Amount         float64 `json:",string"`
+		Pair           string  `json:"currencyPair"`
+		Date           string
+		Total          float64 `json:",string"`
+		Type           string
+		StartingAmount float64 `json:"startingAmount,string"`
+	}
+
+	// Buy orders
 	Buy struct {
 		OrderNumber     int64 `json:",string"`
 		ResultingTrades []ResultingTrade
 	}
-	//ResultingTrade which form part of an order
+	// ResultingTrade which form part of an order
 	ResultingTrade struct {
-		Amount  float64 `json:",string"`
-		Rate    float64 `json:",string"`
-		Date    string
-		Total   float64 `json:",string"`
-		TradeID string  `json:"tradeID"`
-		Type    string
+		Amount        float64 `json:",string"`
+		Rate          float64 `json:",string"`
+		Date          string
+		Total         float64 `json:",string"`
+		TradeID       string  `json:"tradeID"`
+		Type          string
+		Fee           float64 `json:",string"`
+		Pair          string  `json:"currencyPair"`
+		ClientOrderID string  `json:"clientOrderId"`
 	}
-	//Sell order
+	// Sell order
 	Sell struct {
 		Buy
 	}
 
-	//MoveOrder status
+	// MoveOrder status
 	MoveOrder struct {
 		Base
 		OrderNumber     int64 `json:",string"`
 		ResultingTrades []ResultingTrade
 	}
 
-	//Withdraw status
+	// MarginPosition of a pair
+	MarginPosition struct {
+		Amount           float64 `json:",string"`
+		Total            float64 `json:",string"`
+		BasePrice        float64 `json:",string"`
+		LiquidationPrice float64 `json:",string"`
+		PL               float64 `json:",string"`
+		LendingFees      float64 `json:",string"`
+		Type             string
+	}
+
+	// Withdraw status
 	Withdraw struct {
 		Base
 	}
@@ -175,12 +219,12 @@ type (
 	tradableBalancesTemp map[string]tradableBalanceTemp
 	tradableBalanceTemp  map[string]json.Number
 
-	//TransferBalance holds status of a balance transfer.
+	// TransferBalance holds status of a balance transfer.
 	TransferBalance struct {
 		Base
 		Message string `json:"message"`
 	}
-	//MarginAccountSummary holds a summary of your entire margin account.
+	// MarginAccountSummary holds a summary of your entire margin account.
 	MarginAccountSummary struct {
 		TotalValue         float64 `json:"totalValue,string"`
 		ProfitLoss         float64 `json:"pl,string"`
@@ -190,14 +234,14 @@ type (
 		CurrentMargin      float64 `json:"currentMargin,string"`
 	}
 
-	//LoanOffer holds status of a loan offer attempt
+	// LoanOffer holds status of a loan offer attempt
 	LoanOffer struct {
 		Base
 		OrderID int64 `json:"orderID"`
 	}
-	//OpenLoanOffers holds your open loan offers for each currency.
+	// OpenLoanOffers holds your open loan offers for each currency.
 	OpenLoanOffers map[string][]OpenLoanOffer
-	//OpenLoanOffer holds your open loan offers for a single currency.
+	// OpenLoanOffer holds your open loan offers for a single currency.
 	OpenLoanOffer struct {
 		ID        int64   `json:"id"`
 		Rate      float64 `json:",string"`
@@ -209,11 +253,11 @@ type (
 		DateTaken time.Time
 	}
 
-	//ActiveLoans holds your active loans.
+	// ActiveLoans holds your active loans.
 	ActiveLoans struct {
 		Provided []ActiveLoan
 	}
-	//ActiveLoan holds your active single loan.
+	// ActiveLoan holds your active single loan.
 	ActiveLoan struct {
 		ID        int64 `json:"id"`
 		Currency  string
@@ -226,15 +270,31 @@ type (
 		DateTaken time.Time
 		Fees      float64 `json:",string"`
 	}
+
+	// LendingHistory holds the lending history for a time period
+	LendingHistory []LendingHistoryEntry
+	// LendingHistoryEntry describes one lending history event
+	LendingHistoryEntry struct {
+		ID       int64 `json:"id"`
+		Currency string
+		Rate     float64 `json:",string"`
+		Amount   float64 `json:",string"`
+		Duration float64 `json:",string"`
+		Interest float64 `json:",string"`
+		Earned   float64 `json:",string"`
+		Open     string
+		Close    string
+		Fee      float64 `json:",string"`
+	}
 )
 
-//Balances returns all of your balances available for trade after having deducted all open orders.
+// Balances returns all of your balances available for trade after having deducted all open orders.
 func (p *Poloniex) Balances() (balances Balances, err error) {
 	err = p.private("returnCompleteBalances", nil, &balances)
 	return balances, err
 }
 
-//AccountBalances beturns your balances sorted by account.
+// AccountBalances beturns your balances sorted by account.
 func (p *Poloniex) AccountBalances() (balances AccountBalances, err error) {
 	b := accountBalancesTemp{}
 	p.private("returnAvailableAccountBalances", nil, &b)
@@ -251,13 +311,13 @@ func (p *Poloniex) AccountBalances() (balances AccountBalances, err error) {
 	return
 }
 
-//Addresses returns all of your deposit addresses
+// Addresses returns all of your deposit addresses
 func (p *Poloniex) Addresses() (addresses Addresses, err error) {
 	p.private("returnDepositAddresses", nil, &addresses)
 	return
 }
 
-//GenerateNewAddress generates a new deposit address for the currency specified
+// GenerateNewAddress generates a new deposit address for the currency specified
 func (p *Poloniex) GenerateNewAddress(currency string) (address string, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -267,7 +327,7 @@ func (p *Poloniex) GenerateNewAddress(currency string) (address string, err erro
 	return
 }
 
-//DepositsWithdrawals returns your deposit and withdrawal history for the last 6 months,
+// DepositsWithdrawals returns your deposit and withdrawal history for the last 6 months,
 func (p *Poloniex) DepositsWithdrawals() (depositsWithdrawals DepositsWithdrawals, err error) {
 	params := url.Values{}
 	params.Add("start", fmt.Sprintf("%d", time.Now().Add(-4380*time.Hour).Unix()))
@@ -276,7 +336,7 @@ func (p *Poloniex) DepositsWithdrawals() (depositsWithdrawals DepositsWithdrawal
 	return
 }
 
-//OpenOrders returns your open orders for a given market
+// OpenOrders returns your open orders for a given market
 func (p *Poloniex) OpenOrders(pair string) (openOrders OpenOrders, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -284,7 +344,7 @@ func (p *Poloniex) OpenOrders(pair string) (openOrders OpenOrders, err error) {
 	return
 }
 
-//OpenOrdersAll returns your open orders for all markets
+// OpenOrdersAll returns your open orders for all markets
 func (p *Poloniex) OpenOrdersAll() (openOrders OpenOrdersAll, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", "all")
@@ -324,7 +384,7 @@ func (p *Poloniex) PrivateTradeHistoryAll(dates ...int64) (history PrivateTradeH
 	return
 }
 
-//OrderTrades returns all trades involving a given order,
+// OrderTrades returns all trades involving a given order,
 func (p *Poloniex) OrderTrades(orderNumber int64) (ot OrderTrades, err error) {
 	params := url.Values{}
 	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
@@ -332,7 +392,15 @@ func (p *Poloniex) OrderTrades(orderNumber int64) (ot OrderTrades, err error) {
 	return
 }
 
-//CancelOrder cancels an order you have placed in a given market
+// OrderStatus returns the status of an individual order
+func (p *Poloniex) OrderStatus(orderNumber int64) (os OrderStatus, err error) {
+	params := url.Values{}
+	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
+	err = p.private("returnOrderStatus", params, &os)
+	return
+}
+
+// CancelOrder cancels an order you have placed in a given market
 func (p *Poloniex) CancelOrder(orderNumber int64) (success bool, err error) {
 	params := url.Values{}
 	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
@@ -342,7 +410,7 @@ func (p *Poloniex) CancelOrder(orderNumber int64) (success bool, err error) {
 	return
 }
 
-//Buy places a limit buy order in a given market.
+// Buy places a limit buy order in a given market.
 func (p *Poloniex) Buy(pair string, rate, amount float64) (buy Buy, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -364,7 +432,7 @@ func (p *Poloniex) BuyPostOnly(pair string, rate, amount float64) (buy Buy, err 
 	return
 }
 
-//BuyFillKill places a limit buy order in a given market.
+// BuyFillKill places a limit buy order in a given market.
 // If the order is not immediately entirely filled, the order is killed
 func (p *Poloniex) BuyFillKill(pair string, rate, amount float64) (buy Buy, err error) {
 	params := url.Values{}
@@ -376,9 +444,9 @@ func (p *Poloniex) BuyFillKill(pair string, rate, amount float64) (buy Buy, err 
 	return
 }
 
-//BuyImmediateOrCancel places a limit buy order in a given market.
+// BuyImmediateOrCancel places a limit buy order in a given market.
 // This order can be partially or completely filled,
-//but any portion of the order that cannot be filled immediately will be canceled
+// but any portion of the order that cannot be filled immediately will be canceled
 func (p *Poloniex) BuyImmediateOrCancel(pair string, rate, amount float64) (buy Buy, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -389,7 +457,7 @@ func (p *Poloniex) BuyImmediateOrCancel(pair string, rate, amount float64) (buy 
 	return
 }
 
-//Sell places a limit sell order in a given market.
+// Sell places a limit sell order in a given market.
 func (p *Poloniex) Sell(pair string, rate, amount float64) (sell Sell, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -411,7 +479,7 @@ func (p *Poloniex) SellPostOnly(pair string, rate, amount float64) (sell Sell, e
 	return
 }
 
-//SellImmediateOrCancel places a limit sell order in a given market.
+// SellImmediateOrCancel places a limit sell order in a given market.
 // This order can be partially or completely filled,
 // but any portion of the order that cannot be filled immediately will be canceled
 func (p *Poloniex) SellImmediateOrCancel(pair string, rate, amount float64) (sell Sell, err error) {
@@ -424,7 +492,19 @@ func (p *Poloniex) SellImmediateOrCancel(pair string, rate, amount float64) (sel
 	return
 }
 
-//Move cancels an order and places a new one of the same type in a single atomic transaction,
+// SellFillKill places a limit sell order in a given market.
+// If the order is not immediately entirely filled, the order is killed
+func (p *Poloniex) SellFillKill(pair string, rate, amount float64) (sell Sell, err error) {
+	params := url.Values{}
+	params.Add("currencyPair", pair)
+	params.Add("rate", fmt.Sprintf("%.8f", rate))
+	params.Add("amount", fmt.Sprintf("%.8f", amount))
+	params.Add("fillOrKill", "1")
+	err = p.private("sell", params, &sell)
+	return
+}
+
+// Move cancels an order and places a new one of the same type in a single atomic transaction,
 // meaning either both operations will succeed or both will fail.
 func (p *Poloniex) Move(orderNumber int64, rate float64) (moveOrder MoveOrder, err error) {
 	params := url.Values{}
@@ -434,9 +514,9 @@ func (p *Poloniex) Move(orderNumber int64, rate float64) (moveOrder MoveOrder, e
 	return
 }
 
-//MovePostOnly cancels an order and places a new one of the same type in a single atomic transaction,
+// MovePostOnly cancels an order and places a new one of the same type in a single atomic transaction,
 // meaning either both operations will succeed or both will fail.
-//the order is only placed if no portion of the order is filled immediately
+// the order is only placed if no portion of the order is filled immediately
 func (p *Poloniex) MovePostOnly(orderNumber int64, rate float64) (moveOrder MoveOrder, err error) {
 	params := url.Values{}
 	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
@@ -446,7 +526,7 @@ func (p *Poloniex) MovePostOnly(orderNumber int64, rate float64) (moveOrder Move
 	return
 }
 
-//MoveImmediateOrCancel cancels an order and places a new one of the same type in a single atomic transaction,
+// MoveImmediateOrCancel cancels an order and places a new one of the same type in a single atomic transaction,
 // meaning either both operations will succeed or both will fail.
 // This order can be partially or completely filled,
 // but any portion of the order that cannot be filled immediately will be canceled
@@ -459,8 +539,54 @@ func (p *Poloniex) MoveImmediateOrCancel(orderNumber int64, rate float64) (moveO
 	return
 }
 
-//Withdraw immediately places a withdrawal for a given currency, with no email confirmation.
-//In order to use this method, withdrawal privilege must be enabled for your API key.
+// MarginBuy enters a buy order into the margin markets
+func (p *Poloniex) MarginBuy(pair string, rate float64, lendingRate float64, amount float64, clientOrderIDs ...string) (buy Buy, err error) {
+	params := url.Values{}
+	params.Add("currencyPair", pair)
+	params.Add("rate", fmt.Sprintf("%.8f", rate))
+	params.Add("amount", fmt.Sprintf("%.8f", amount))
+	params.Add("lendingRate", fmt.Sprintf("%.8f", lendingRate))
+	if len(clientOrderIDs) > 0 {
+		params.Add("clientOrderId", clientOrderIDs[0])
+	}
+	err = p.private("marginBuy", params, &buy)
+	return
+}
+
+// MarginSell enters a sell order into the margin markets
+func (p *Poloniex) MarginSell(pair string, rate float64, lendingRate float64, amount float64, clientOrderIDs ...string) (sell Sell, err error) {
+	params := url.Values{}
+	params.Add("currencyPair", pair)
+	params.Add("rate", fmt.Sprintf("%.8f", rate))
+	params.Add("amount", fmt.Sprintf("%.8f", amount))
+	params.Add("lendingRate", fmt.Sprintf("%.8f", lendingRate))
+	if len(clientOrderIDs) > 0 {
+		params.Add("clientOrderId", clientOrderIDs[0])
+	}
+	err = p.private("marginSell", params, &sell)
+	return
+}
+
+// MarginPosition returns margin position info for a pair
+func (p *Poloniex) MarginPosition(pair string) (mp MarginPosition, err error) {
+	params := url.Values{}
+	params.Add("currencyPair", pair)
+	err = p.private("getMarginPosition", params, &mp)
+	return
+}
+
+// CloseMarginPosition closes a margin position
+func (p *Poloniex) CloseMarginPosition(pair string) (success bool, err error) {
+	params := url.Values{}
+	params.Add("currencyPair", pair)
+	b := Base{}
+	err = p.private("closeMarginPosition", params, &b)
+	success = b.Success == 1
+	return
+}
+
+// Withdraw immediately places a withdrawal for a given currency, with no email confirmation.
+// In order to use this method, withdrawal privilege must be enabled for your API key.
 func (p *Poloniex) Withdraw(currency string, amount float64, address string) (w Withdraw, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -470,13 +596,13 @@ func (p *Poloniex) Withdraw(currency string, amount float64, address string) (w 
 	return
 }
 
-//FeeInfo returns your current trading fees and trailing 30-day volume in BTC
+// FeeInfo returns your current trading fees and trailing 30-day volume in BTC
 func (p *Poloniex) FeeInfo() (fi FeeInfo, err error) {
 	err = p.private("returnFeeInfo", nil, &fi)
 	return
 }
 
-//AvailableAccountBalances returns your balances sorted by account.
+// AvailableAccountBalances returns your balances sorted by account.
 func (p *Poloniex) AvailableAccountBalances() (aab AvailableAccountBalances, err error) {
 	aabt := availableAccountBalancesTemp{}
 	err = p.private("returnAvailableAccountBalances", nil, &aabt)
@@ -498,7 +624,7 @@ func (p *Poloniex) AvailableAccountBalances() (aab AvailableAccountBalances, err
 	return
 }
 
-//TradableBalances returns your current tradable balances for each currency in each market for which margin trading is enabled
+// TradableBalances returns your current tradable balances for each currency in each market for which margin trading is enabled
 func (p *Poloniex) TradableBalances() (tb TradableBalances, err error) {
 	tbt := tradableBalancesTemp{}
 	err = p.private("returnTradableBalances", nil, &tbt)
@@ -515,7 +641,7 @@ func (p *Poloniex) TradableBalances() (tb TradableBalances, err error) {
 	return
 }
 
-//TransferBalance transfers funds from one account to another (e.g. from your exchange account to your margin account).
+// TransferBalance transfers funds from one account to another (e.g. from your exchange account to your margin account).
 func (p *Poloniex) TransferBalance(currency string, amount float64, from string, to string) (tb TransferBalance, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -527,13 +653,13 @@ func (p *Poloniex) TransferBalance(currency string, amount float64, from string,
 	return
 }
 
-//MarginAccountSummary returns a summary of your entire margin account
+// MarginAccountSummary returns a summary of your entire margin account
 func (p *Poloniex) MarginAccountSummary() (mas MarginAccountSummary, err error) {
 	err = p.private("returnMarginAccountSummary", nil, &mas)
 	return
 }
 
-//LoanOffer creates a loan offer for a given currency.
+// LoanOffer creates a loan offer for a given currency.
 func (p *Poloniex) LoanOffer(currency string, amount float64, duration int, renew bool, lendingRate float64) (loanOffer LoanOffer, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -549,7 +675,7 @@ func (p *Poloniex) LoanOffer(currency string, amount float64, duration int, rene
 	return
 }
 
-//CancelLoanOffer cancels the loan offer specified .
+// CancelLoanOffer cancels the loan offer specified .
 func (p *Poloniex) CancelLoanOffer(orderNumber int64) (success bool, err error) {
 	params := url.Values{}
 	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
@@ -559,13 +685,13 @@ func (p *Poloniex) CancelLoanOffer(orderNumber int64) (success bool, err error) 
 	return
 }
 
-//OpenLoanOffers returns your open loan offers for each currency.
+// OpenLoanOffers returns your open loan offers for each currency.
 func (p *Poloniex) OpenLoanOffers() (openLoanOffers OpenLoanOffers, err error) {
 	err = p.private("returnOpenLoanOffers", nil, &openLoanOffers)
 	return
 }
 
-//ActiveLoans returns your active loans for each currency.
+// ActiveLoans returns your active loans for each currency.
 func (p *Poloniex) ActiveLoans() (activeLoans ActiveLoans, err error) {
 	err = p.private("returnActiveLoans", nil, &activeLoans)
 	provided := activeLoans.Provided
@@ -583,7 +709,19 @@ func (p *Poloniex) ActiveLoans() (activeLoans ActiveLoans, err error) {
 	return
 }
 
-//ToggleAutoRenew toggles the autoRenew setting on an active loan,
+// LendingHistory returns the lending history for a specified date range
+func (p *Poloniex) LendingHistory(start, end int64, limit int64) (lh LendingHistory, err error) {
+	params := url.Values{}
+	params.Add("start", fmt.Sprintf("%d", start))
+	params.Add("end", fmt.Sprintf("%d", end))
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	err = p.private("returnLendingHistory", params, &lh)
+	return
+}
+
+// ToggleAutoRenew toggles the autoRenew setting on an active loan,
 func (p *Poloniex) ToggleAutoRenew(orderNumber int64) (success bool, err error) {
 	params := url.Values{}
 	params.Add("orderNumber", fmt.Sprintf("%d", orderNumber))
@@ -638,7 +776,7 @@ func (p *Poloniex) private(method string, params url.Values, retval interface{})
 	}
 
 	if strings.HasPrefix(s, "[") {
-		//TODO: fix this shit
+		// TODO: fix this shit
 		//  poloniex only ever returns an array type when there is no real data
 		//  e.g. no data in a time range
 		//  if this ever changes then this breaks badly

@@ -11,9 +11,9 @@ import (
 )
 
 type (
-	//Ticker is summary information for all currency pairs
+	// Ticker is summary information for all currency pairs
 	Ticker map[string]TickerEntry
-	//TickerEntry is summary information for a currency pair
+	// TickerEntry is summary information for a currency pair
 	TickerEntry struct {
 		Last        float64 `json:",string"`
 		Ask         float64 `json:"lowestAsk,string"`
@@ -22,58 +22,62 @@ type (
 		BaseVolume  float64 `json:"baseVolume,string"`
 		QuoteVolume float64 `json:"quoteVolume,string"`
 		IsFrozen    int64   `json:"isFrozen,string"`
+		High        float64 `json:"high24hr,string"`
+		Low         float64 `json:"low24hr,string"`
 		ID          int64   `json:"id"`
 	}
 
-	//DailyVolume is the 24-hour volume for all markets as well as totals for primary currencies
+	// DailyVolume is the 24-hour volume for all markets as well as totals for primary currencies
 	DailyVolume map[string]DailyVolumeEntry
-	//DailyVolumeEntry is the 24-hour volume for a market
+	// DailyVolumeEntry is the 24-hour volume for a market
 	DailyVolumeEntry map[string]float64
-	//DailyVolumeTemp ::::
+	// DailyVolumeTemp ::::
 	DailyVolumeTemp map[string]interface{}
-	//DailyVolumeEntryTemp ::::
+	// DailyVolumeEntryTemp ::::
 	DailyVolumeEntryTemp map[string]interface{}
 
-	//OrderBook for a given market
+	// OrderBook for a given market
 	OrderBook struct {
 		Asks     []Order
 		Bids     []Order
 		IsFrozen bool
+		Seq      int64 `json:"seq"`
 	}
-	//Order for a given trade
+	// Order for a given trade
 	Order struct {
 		Rate   float64
 		Amount float64
 	}
 
-	//OrderBookTemp ::::
+	// OrderBookTemp ::::
 	OrderBookTemp struct {
 		Asks     []OrderTemp
 		Bids     []OrderTemp
 		IsFrozen interface{}
 	}
-	//OrderTemp ::::
+	// OrderTemp ::::
 	OrderTemp []interface{}
-	//OrderBookAll holds the OrderBooks for all markets
+	// OrderBookAll holds the OrderBooks for all markets
 	OrderBookAll map[string]OrderBook
-	//OrderBookAllTemp ::::
+	// OrderBookAllTemp ::::
 	OrderBookAllTemp map[string]OrderBookTemp
 
-	//TradeHistory holds the historical trades for a given market
+	// TradeHistory holds the historical trades for a given market
 	TradeHistory []TradeHistoryEntry
-	//TradeHistoryEntry holds an individual historical order
+	// TradeHistoryEntry holds an individual historical order
 	TradeHistoryEntry struct {
-		ID     int64 `json:"globalTradeID"`
-		Date   string
-		Type   string
-		Rate   float64 `json:",string"`
-		Amount float64 `json:",string"`
-		Total  float64 `json:",string"`
+		ID      int64 `json:"globalTradeID"`
+		TradeID int64 `json:"tradeID"`
+		Date    string
+		Type    string
+		Rate    float64 `json:",string"`
+		Amount  float64 `json:",string"`
+		Total   float64 `json:",string"`
 	}
 
-	//ChartData holds OHLC data for a period of time at specific resolution
+	// ChartData holds OHLC data for a period of time at specific resolution
 	ChartData []ChartDataEntry
-	//ChartDataEntry holds OHLC data for a specific period of time at a specific resolution
+	// ChartDataEntry holds OHLC data for a specific period of time at a specific resolution
 	ChartDataEntry struct {
 		Date            int64
 		High            float64
@@ -85,9 +89,9 @@ type (
 		WeightedAverage float64
 	}
 
-	//Currencies holds information about the available currencies
+	// Currencies holds information about the available currencies
 	Currencies map[string]Currency
-	//Currency holds information about a specific currency
+	// Currency holds information about a specific currency
 	Currency struct {
 		Name           string
 		TxFee          float64 `json:",string"`
@@ -98,12 +102,12 @@ type (
 		Frozen         int64
 	}
 
-	//LoanOrders holds the list of loan offers and demands for a given currency
+	// LoanOrders holds the list of loan offers and demands for a given currency
 	LoanOrders struct {
 		Offers  []LoanOrder
 		Demands []LoanOrder
 	}
-	//LoanOrder holds the a loan offer/demand for a given currency
+	// LoanOrder holds the a loan offer/demand for a given currency
 	LoanOrder struct {
 		Rate     float64 `json:",string"`
 		Amount   float64 `json:",string"`
@@ -112,13 +116,13 @@ type (
 	}
 )
 
-//Ticker retrieves summary information for each currency pair listed on the exchange.
+// Ticker retrieves summary information for each currency pair listed on the exchange.
 func (p *Poloniex) Ticker() (ticker Ticker, err error) {
 	err = p.public("returnTicker", nil, &ticker)
 	return
 }
 
-//DailyVolume returns the 24-hour volume for all markets as well as totals for primary currencies
+// DailyVolume returns the 24-hour volume for all markets as well as totals for primary currencies
 func (p *Poloniex) DailyVolume() (dailyVolume DailyVolume, err error) {
 	dvt := DailyVolumeTemp{}
 	err = p.public("return24hVolume", nil, &dvt)
@@ -137,7 +141,7 @@ func (p *Poloniex) DailyVolume() (dailyVolume DailyVolume, err error) {
 			}
 			dailyVolume[k] = dve
 		case string:
-			//ignore anything that isn't a map
+			// ignore anything that isn't a map
 		}
 	}
 	return
@@ -196,11 +200,9 @@ func (p *Poloniex) TradeHistory(pair string, dates ...int64) (tradeHistory Trade
 	return
 }
 
-var (
-	returnChartData = "returnChartData"
-)
+var returnChartData = "returnChartData"
 
-//ChartData returns OHLC chart data for the last 24 hour period at 5 minute resolution.
+// ChartData returns OHLC chart data for the last 24 hour period at 5 minute resolution.
 func (p *Poloniex) ChartData(pair string) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -211,7 +213,7 @@ func (p *Poloniex) ChartData(pair string) (chartData ChartData, err error) {
 	return
 }
 
-//ChartDataPeriod returns OHLC chart data for the specified period at a specified ersolution (default 5 minute resolution).
+// ChartDataPeriod returns OHLC chart data for the specified period at a specified ersolution (default 5 minute resolution).
 func (p *Poloniex) ChartDataPeriod(pair string, start, end time.Time, period ...int) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -227,7 +229,7 @@ func (p *Poloniex) ChartDataPeriod(pair string, start, end time.Time, period ...
 	return
 }
 
-//ChartDataCurrent returns OHLC chart data for the last period at 5 minute resolution.
+// ChartDataCurrent returns OHLC chart data for the last period at 5 minute resolution.
 func (p *Poloniex) ChartDataCurrent(pair string) (chartData ChartData, err error) {
 	params := url.Values{}
 	params.Add("currencyPair", pair)
@@ -238,13 +240,13 @@ func (p *Poloniex) ChartDataCurrent(pair string) (chartData ChartData, err error
 	return
 }
 
-//Currencies returns information about currencies.
+// Currencies returns information about currencies.
 func (p *Poloniex) Currencies() (currencies Currencies, err error) {
 	err = p.public("returnCurrencies", nil, &currencies)
 	return
 }
 
-//LoanOrders returns the list of loan offers and demands for a given currency,
+// LoanOrders returns the list of loan offers and demands for a given currency,
 func (p *Poloniex) LoanOrders(currency string) (loanOrders LoanOrders, err error) {
 	params := url.Values{}
 	params.Add("currency", currency)
@@ -275,7 +277,7 @@ func tempToOrderBook(obt OrderBookTemp) (ob OrderBook) {
 	return
 }
 
-//public calls a public endpoint
+// public calls a public endpoint
 func (p *Poloniex) public(command string, params url.Values, retval interface{}) (err error) {
 	if p.debug {
 		defer un(trace("public: " + command))

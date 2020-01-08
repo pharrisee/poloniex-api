@@ -14,10 +14,14 @@ type (
 		Command string `json:"command"`
 		Channel string `json:"channel"`
 	}
+
+	notificationSubscription struct {
+		subscription
+		Key string `json:"key"`
+	}
 )
 
 func (p *Poloniex) sendWSMessage(msg interface{}) error {
-
 	msgs, err := json.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshalling WSmessage failed")
@@ -31,7 +35,7 @@ func (p *Poloniex) sendWSMessage(msg interface{}) error {
 	return nil
 }
 
-//makeTickerHandler takes a WS Order or Trade and send it over the channel sepcified by the user
+// makeTickerHandler takes a WS Order or Trade and send it over the channel specified by the user
 func (p *Poloniex) messageHandler(ch chan WSTicker) turnpike.EventHandler {
 	return func(p []interface{}, n map[string]interface{}) {
 		t := WSTicker{

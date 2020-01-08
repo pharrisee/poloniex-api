@@ -13,3 +13,5 @@ require (
 	github.com/ugorji/go/codec v0.0.0-20190320090025-2dc34c0b8780 // indirect
 	gopkg.in/beatgammit/turnpike.v2 v2.0.0-20170911161258-573f579df7ee
 )
+
+go 1.13
