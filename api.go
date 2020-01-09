@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mariuspass/recws"
+	"github.com/recws-org/recws"
 
 	"github.com/chuckpreslar/emission"
 
@@ -19,7 +19,7 @@ import (
 )
 
 type (
-	//Poloniex describes the API
+	// Poloniex describes the API
 	Poloniex struct {
 		Key           string
 		Secret        string
@@ -33,7 +33,7 @@ type (
 		ByName        map[string]string
 	}
 
-	//Error is a domain specific error
+	// Error is a domain specific error
 	Error struct {
 		Error string `json:"error"`
 	}
@@ -46,7 +46,7 @@ const (
 	PRIVATEURI = "https://poloniex.com/tradingApi"
 )
 
-//Debug turns on debugmode, which basically dumps all responses from the poloniex API REST server
+// Debug turns on debugmode, which basically dumps all responses from the poloniex API REST server
 func (p *Poloniex) Debug() {
 	p.debug = true
 }
@@ -85,7 +85,6 @@ func NewWithConfig(configfile string) *Poloniex {
 		log.Fatalln(errors.Wrap(err, "unmarshal of config failed."))
 	}
 	return NewWithCredentials(p["key"], p["secret"])
-
 }
 
 // NewPublicOnly allows the use of the public and websocket api only
