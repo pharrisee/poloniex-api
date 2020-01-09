@@ -2,7 +2,6 @@ package poloniex
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -26,7 +25,7 @@ func (p *Poloniex) sendWSMessage(msg interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "marshalling WSmessage failed")
 	}
-	log.Println(string(msgs))
+	// log.Println(string(msgs))
 
 	err = p.ws.WriteMessage(websocket.TextMessage, msgs)
 	if err != nil {
@@ -35,7 +34,7 @@ func (p *Poloniex) sendWSMessage(msg interface{}) error {
 	return nil
 }
 
-// makeTickerHandler takes a WS Order or Trade and send it over the channel specified by the user
+// messageHandler takes a WS Order or Trade and send it over the channel specified by the user
 func (p *Poloniex) messageHandler(ch chan WSTicker) turnpike.EventHandler {
 	return func(p []interface{}, n map[string]interface{}) {
 		t := WSTicker{
