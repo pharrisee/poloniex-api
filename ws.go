@@ -1,6 +1,7 @@
 package poloniex
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -46,28 +47,27 @@ type (
 
 // StartWS opens the websocket connection, and waits for message events
 func (p *Poloniex) StartWS() {
-	go func() {
-		for {
-			message := []interface{}{}
-			err := p.ws.ReadJSON(&message)
-			if err != nil {
-				log.Println("read:", err)
-				continue
+	p.ws.OnMessage(func(b []byte) {
+		message := []interface{}{}
+
+		err := json.Unmarshal(b, &message)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		chid := int64(message[0].(float64)) // first element is the channel id
+		chids := toString(chid)
+		// we only handle informational and pair based channels, assuming the informational channels are orderbooks
+		if chid > 100.0 && chid < 1000.0 { //
+			if err := p.handleOrderBook(message); err != nil {
+				return
 			}
-			chid := int64(message[0].(float64)) // first element is the channel id
-			chids := toString(chid)
-			// we only handle informational and pair based channels, assuming the informational channels are orderbooks
-			if chid > 100.0 && chid < 1000.0 { //
-				if err := p.handleOrderBook(message); err != nil {
-					continue
-				}
-			} else if chids == p.ByName["ticker"] {
-				if err := p.handleTicker(message); err != nil {
-					continue
-				}
+		} else if chids == p.ByName["ticker"] {
+			if err := p.handleTicker(message); err != nil {
+				return
 			}
 		}
-	}()
+	})
 }
 
 // takes a message and emits relevant events

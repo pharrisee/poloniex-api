@@ -3,7 +3,6 @@ package poloniex
 import (
 	"encoding/json"
 
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	turnpike "gopkg.in/beatgammit/turnpike.v2"
 )
@@ -27,10 +26,7 @@ func (p *Poloniex) sendWSMessage(msg interface{}) error {
 	}
 	// log.Println(string(msgs))
 
-	err = p.ws.WriteMessage(websocket.TextMessage, msgs)
-	if err != nil {
-		return errors.Wrap(err, "sending WSmessage failed")
-	}
+	p.ws.Send(msgs)
 	return nil
 }
 
