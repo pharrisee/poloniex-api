@@ -48,6 +48,7 @@ type (
 // StartWS opens the websocket connection, and waits for message events
 func (p *Poloniex) StartWS() {
 	p.ws.OnMessage(func(b []byte) {
+		// log.Println("message")
 		message := []interface{}{}
 
 		err := json.Unmarshal(b, &message)

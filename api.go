@@ -67,6 +67,7 @@ func NewWithCredentials(key, secret string) *Poloniex {
 	p.ws = gows.New(&gows.Configuration{
 		URL: apiURL,
 	})
+	p.ws.Connect()
 	p.getMarkets()
 
 	return p
