@@ -6,12 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 )
 
 const (
 	apiURL = "wss://api2.poloniex.com/"
 )
+
+// ErrAck ::::
+var ErrAck = errors.New("cannot parse to ticker - ack")
 
 type (
 	// WSTicker describes a ticker item
@@ -55,10 +59,6 @@ func (p *Poloniex) StartWS() {
 			log.Printf("Websocket closed %s", p.ws.GetURL())
 			return
 		default:
-			// if !p.ws.IsConnected() {
-			// 	log.Printf("Websocket disconnected %s", p.ws.GetURL())
-			// 	continue
-			// }
 			message := []interface{}{}
 			if err := p.ws.ReadJSON(&message); err != nil {
 				log.Println(err)
@@ -147,10 +147,18 @@ func (p *Poloniex) Unsubscribe(chid string) error {
 
 // parse the ticker supplied
 func (p *Poloniex) parseTicker(raw []interface{}) (WSTicker, error) {
+	isAck := func(raw []interface{}) bool {
+		pp.Println(raw)
+		if raw[1] == nil {
+			return false
+		}
+		return raw[0].(float64) == 1002.0 && raw[1].(float64) == 1.0
+	}
+
 	wt := WSTicker{}
 	var rawInner []interface{}
-	if len(raw) <= 2 {
-		return wt, errors.New("cannot parse to ticker")
+	if isAck(raw) {
+		return wt, ErrAck
 	}
 	rawInner = raw[2].([]interface{})
 	marketID := int64(toFloat(rawInner[0]))
