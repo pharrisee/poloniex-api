@@ -1,9 +1,6 @@
 package poloniex
 
 import (
-	"encoding/json"
-
-	"github.com/pkg/errors"
 	turnpike "gopkg.in/beatgammit/turnpike.v2"
 )
 
@@ -20,13 +17,7 @@ type (
 )
 
 func (p *Poloniex) sendWSMessage(msg interface{}) error {
-	msgs, err := json.Marshal(msg)
-	if err != nil {
-		return errors.Wrap(err, "marshalling WSmessage failed")
-	}
-	// log.Println(string(msgs))
-
-	p.ws.Send(msgs)
+	p.ws.WriteJSON(msg)
 	return nil
 }
 

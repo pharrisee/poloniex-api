@@ -6,11 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/miratronix/gows"
+	"github.com/recws-org/recws"
 
 	"github.com/chuckpreslar/emission"
 
@@ -22,7 +23,7 @@ type (
 	Poloniex struct {
 		Key           string
 		Secret        string
-		ws            *gows.Websocket
+		ws            recws.RecConn
 		debug         bool
 		nonce         int64
 		mutex         sync.Mutex
@@ -64,10 +65,9 @@ func NewWithCredentials(key, secret string) *Poloniex {
 	p.mutex = sync.Mutex{}
 	p.emitter = emission.NewEmitter()
 	p.subscriptions = map[string]bool{}
-	p.ws = gows.New(&gows.Configuration{
-		URL: apiURL,
-	})
-	p.ws.Connect()
+	p.ws = recws.RecConn{}
+	p.ws.Dial(apiURL, http.Header{})
+
 	p.getMarkets()
 
 	return p
@@ -95,9 +95,8 @@ func NewPublicOnly() *Poloniex {
 	p.mutex = sync.Mutex{}
 	p.emitter = emission.NewEmitter()
 	p.subscriptions = map[string]bool{}
-	p.ws = gows.New(&gows.Configuration{
-		URL: apiURL,
-	})
+	p.ws = recws.RecConn{}
+	p.ws.Dial(apiURL, http.Header{})
 	p.getMarkets()
 	return p
 }

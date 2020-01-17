@@ -9,8 +9,9 @@ require (
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/miratronix/gows v0.0.0-20191101035019-f217ff4e7cb2
-	github.com/miratronix/logpher v0.0.0-20190916004947-6d251d5ad966 // indirect
+	github.com/miratronix/logpher v0.0.0-20190916004947-6d251d5ad966
 	github.com/pkg/errors v0.8.1
+	github.com/recws-org/recws v1.0.1
 	github.com/streamrail/concurrent-map v0.0.0-20160823150647-8bf1e9bacbf6 // indirect
 	github.com/ugorji/go v1.1.7 // indirect
 	golang.org/x/sys v0.0.0-20200107162124-548cf772de50 // indirect
