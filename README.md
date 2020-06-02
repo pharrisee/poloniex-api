@@ -1,5 +1,8 @@
 <a href="https://godoc.org/github.com/pharrisee/poloniex-api" target="_blank"><img src="https://godoc.org/github.com/pharrisee/poloniex-api?status.svg"></a>
 
+# ARCHIVED
+## This repository is no longer maintained
+
 # Go Poloniex API wrapper
 This API should be a complete wrapper for the [Poloniex api](https://poloniex.com/support/api/), including the public, private and websocket APIs.
 
